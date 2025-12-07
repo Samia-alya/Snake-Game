@@ -10,13 +10,17 @@ public class GamePanel extends JPanel implements ActionListener{
     static final int SCREEN_HEIGHT = 600;
     static final int UNIT_SIZE = 25; // objects size
     static final int GAME_UNITS = (SCREEN_WIDTH * SCREEN_HEIGHT) / UNIT_SIZE;
-    static final int DELAY = 75;  // speed of the game the highr delay => the slower
+    int DELAY = 75;  // speed of the game the higher delay => the slower
     final int x[] = new int[GAME_UNITS];
     final int y[] = new int[GAME_UNITS];
     int bodyParts = 6; // initial snake size = 6 body parts
     int applesEaten;
     int appleX; // x coordinate of the apple
     int appleY; // y coordinate of the apple
+    int snowFlakeX;
+    int snowFlakeY;
+    int acceleratorX;
+    int acceleratorY;
     char direction = 'R'; // snakes initial direction is right
     boolean running = false;
     Timer timer;
@@ -33,15 +37,17 @@ public class GamePanel extends JPanel implements ActionListener{
     }
     public void startGame() {
         newApple();
+        newSnowFlake();
         running = true;
         timer = new Timer(DELAY, this);
         timer.start();
     }
+
     public void paintComponent(Graphics g){
         super.paintComponent(g);
         draw(g);
-
     }
+
     public void draw(Graphics g){
 
         if(running) {
@@ -53,6 +59,13 @@ public class GamePanel extends JPanel implements ActionListener{
             */
             g.setColor(Color.red);
             g.fillOval(appleX, appleY, UNIT_SIZE, UNIT_SIZE);
+
+            g.setColor(Color.white);
+            g.fillOval(snowFlakeX, snowFlakeY, UNIT_SIZE, UNIT_SIZE);
+
+            g.setColor(Color.yellow);
+            g.fillRect(acceleratorX, acceleratorY, UNIT_SIZE, UNIT_SIZE);
+
 
             for (int i = 0; i < bodyParts; i++) {
                 if (i == 0) { // means we have snake's head
@@ -73,11 +86,18 @@ public class GamePanel extends JPanel implements ActionListener{
         else {
             gameOver(g);
         }
-
     }
     public void newApple(){
         appleX = random.nextInt((int)(SCREEN_WIDTH/UNIT_SIZE)) * UNIT_SIZE;
         appleY = random.nextInt((int)(SCREEN_HEIGHT/UNIT_SIZE)) * UNIT_SIZE;
+    }
+    public void newSnowFlake(){
+        snowFlakeX = random.nextInt((int)(SCREEN_WIDTH/UNIT_SIZE)) * UNIT_SIZE;
+        snowFlakeY = random.nextInt((int)(SCREEN_HEIGHT/UNIT_SIZE)) * UNIT_SIZE;
+    }
+    public void newAccelerator(){
+        acceleratorX = random.nextInt((int)(SCREEN_WIDTH/UNIT_SIZE));
+        acceleratorY = random.nextInt((int)(SCREEN_HEIGHT/UNIT_SIZE));
     }
     public void move(){
         // move the snake
@@ -108,6 +128,29 @@ public class GamePanel extends JPanel implements ActionListener{
             newApple();
         }
 
+    }
+    public void checkSnowFlake(){
+        if (snowFlakeX == x[0] && snowFlakeY == y[0]){
+            DELAY += 10;
+            timer.setDelay(DELAY);
+            newSnowFlake();
+        }
+        if(DELAY <= 65){
+            newAccelerator();
+        }
+    }
+    public void checkAccelerator(){
+        if (snowFlakeX == x[0] && snowFlakeY == y[0]){
+            if (DELAY == 10){
+                newAccelerator();
+            }
+            else if(DELAY >= 100){
+                newSnowFlake();
+            }
+            DELAY -= 10;
+            timer.setDelay(DELAY);
+            newSnowFlake();
+        }
     }
     public void checkCollisions(){
         //for #1 : checks if head collides with body
@@ -149,12 +192,20 @@ public class GamePanel extends JPanel implements ActionListener{
         FontMetrics metrics2 = getFontMetrics(g.getFont());
         g.drawString("Game Over", (SCREEN_WIDTH - metrics2.stringWidth("Game Over") ) / 2, SCREEN_HEIGHT / 2);
 
+        // play button
+
+
     }
+    public void restartGame(Graphics g){
+
+    }
+
     @Override
     public void actionPerformed(ActionEvent e) {
         if(running){ // if game is running
             move();
             checkApple(); // if we ran into the apple
+            checkSnowFlake();
             checkCollisions();
         }
         repaint(); // if game not running
